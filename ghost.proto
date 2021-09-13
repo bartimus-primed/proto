@@ -1,0 +1,15 @@
+service Interact {
+    rpc RunCommand(Command) returns () {}
+    rpc RunCommandAndRespond(Command) returns Response() {}
+}
+
+message Command {
+    string cmd = 1;
+    int timeout = 2;
+    bool send_resp = 3;
+}
+
+message Response {
+    string resp = 1;
+    bool success = 2;
+}
