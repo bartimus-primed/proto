@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	address     = "192.168.253.1:50551"
+	address     = "192.168.253.132:50551"
 	defaultName = "client0"
 )
 
@@ -22,7 +22,7 @@ var recv bool = false
 var shouldExit bool = false
 
 func main() {
-	conn, err := grpc.Dial("192.168.253.1:50551", grpc.WithInsecure())
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

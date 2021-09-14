@@ -53,29 +53,30 @@ func (s *server) HandsOn(stream pb.Interact_HandsOnServer) error {
 			return err
 		}
 		cmd := strings.Split(in.GetCmd(), " ")
-		if strings.TrimSpace(cmd[0]) == "exit" {
+		for i, a := range cmd {
+			cmd[i] = strings.TrimSpace(a)
+		}
+		if cmd[0] == "exit" {
 			fmt.Println("Received kill command")
 			stream.Send(&pb.Response{Resp: "exit"})
 			time.Sleep(time.Second * 2)
 			os.Exit(0)
 		}
 		log.Printf("Received: %v", in.GetCmd())
-		cmd_clean := []string{"cmd.exe", "/c"}
-		for _, a := range cmd {
-			cmd_clean = append(cmd_clean, a)
-		}
 		var cmdstruct *exec.Cmd
 		if runtime.GOOS == "windows" {
+			cmd_clean := []string{"cmd.exe", "/c"}
+			for _, a := range cmd {
+				cmd_clean = append(cmd_clean, a)
+			}
 			cmdstruct = &exec.Cmd{
 				Path: "cmd.exe",
 				Args: cmd_clean,
 			}
 		} else {
-			cmdstruct = &exec.Cmd{
-				Path: "/bin/sh",
-				Args: cmd_clean,
-			}
+			cmdstruct = exec.Command(os.Getenv("SHELL"), "-c", strings.Join(cmd, " "))
 		}
+		fmt.Println(cmdstruct.Path, cmdstruct.Args)
 		out, err := cmdstruct.CombinedOutput()
 		if err != nil {
 			stream.Send(&pb.Response{Resp: fmt.Sprintf("Failed with: ", err), Success: false})
