@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pb;
 import "google/protobuf/empty.proto";
-option go_package = "github.com/bartimus-primed/proto/pb";
+option go_package = "github.com/bartimus-primed/proto/reverse/reverse_pb";
 
 service ReverseInteract {
     rpc SendCommandGetResponse(Command) returns (google.protobuf.Empty) {}
