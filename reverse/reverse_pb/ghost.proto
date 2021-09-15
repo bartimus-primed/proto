@@ -1,0 +1,21 @@
+syntax = "proto3";
+package pb;
+import "google/protobuf/empty.proto";
+option go_package = "github.com/bartimus-primed/proto/pb";
+
+service ReverseInteract {
+    rpc SendCommandGetResponse(Command) returns (google.protobuf.Empty) {}
+    rpc SendCommand(Command) returns (Response) {}
+    rpc HandsOn(stream Command) returns (stream Response) {}
+}
+
+message Command {
+    string cmd = 1;
+    int32 timeout = 2;
+    bool send_resp = 3;
+}
+
+message Response {
+    string resp = 1;
+    bool success = 2;
+}
