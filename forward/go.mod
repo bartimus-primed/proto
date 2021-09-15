@@ -1,4 +1,4 @@
-module github.com/bartimus-primed/proto
+module github.com/bartimus-primed/proto/forward
 
 go 1.17
 
