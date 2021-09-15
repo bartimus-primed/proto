@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	pb "github.com/bartimus-primed/proto/pb"
+	pb "github.com/bartimus-primed/proto/reverse/reverse_pb"
 	"google.golang.org/grpc"
 )
 

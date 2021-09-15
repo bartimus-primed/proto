@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	pb "github.com/bartimus-primed/proto/forward_pb"
+	pb "github.com/bartimus-primed/proto/forward/forward_pb"
 	"google.golang.org/grpc"
 )
 

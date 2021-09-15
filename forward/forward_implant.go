@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/bartimus-primed/proto/forward_pb"
+	pb "github.com/bartimus-primed/proto/forward/forward_pb"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
