@@ -7,7 +7,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReverseInteractClient interface {
-	SendCommandGetResponse(ctx context.Context, in *Command, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	SendCommand(ctx context.Context, in *Command, opts ...grpc.CallOption) (*Response, error)
+	GetCommand(ctx context.Context, in *Response, opts ...grpc.CallOption) (*Command, error)
 	HandsOn(ctx context.Context, opts ...grpc.CallOption) (ReverseInteract_HandsOnClient, error)
 }
 
@@ -32,18 +30,9 @@ func NewReverseInteractClient(cc grpc.ClientConnInterface) ReverseInteractClient
 	return &reverseInteractClient{cc}
 }
 
-func (c *reverseInteractClient) SendCommandGetResponse(ctx context.Context, in *Command, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/pb.ReverseInteract/SendCommandGetResponse", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reverseInteractClient) SendCommand(ctx context.Context, in *Command, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
-	err := c.cc.Invoke(ctx, "/pb.ReverseInteract/SendCommand", in, out, opts...)
+func (c *reverseInteractClient) GetCommand(ctx context.Context, in *Response, opts ...grpc.CallOption) (*Command, error) {
+	out := new(Command)
+	err := c.cc.Invoke(ctx, "/pb.ReverseInteract/GetCommand", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +49,8 @@ func (c *reverseInteractClient) HandsOn(ctx context.Context, opts ...grpc.CallOp
 }
 
 type ReverseInteract_HandsOnClient interface {
-	Send(*Command) error
-	Recv() (*Response, error)
+	Send(*Response) error
+	Recv() (*Command, error)
 	grpc.ClientStream
 }
 
@@ -69,12 +58,12 @@ type reverseInteractHandsOnClient struct {
 	grpc.ClientStream
 }
 
-func (x *reverseInteractHandsOnClient) Send(m *Command) error {
+func (x *reverseInteractHandsOnClient) Send(m *Response) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *reverseInteractHandsOnClient) Recv() (*Response, error) {
-	m := new(Response)
+func (x *reverseInteractHandsOnClient) Recv() (*Command, error) {
+	m := new(Command)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -85,8 +74,7 @@ func (x *reverseInteractHandsOnClient) Recv() (*Response, error) {
 // All implementations must embed UnimplementedReverseInteractServer
 // for forward compatibility
 type ReverseInteractServer interface {
-	SendCommandGetResponse(context.Context, *Command) (*emptypb.Empty, error)
-	SendCommand(context.Context, *Command) (*Response, error)
+	GetCommand(context.Context, *Response) (*Command, error)
 	HandsOn(ReverseInteract_HandsOnServer) error
 	mustEmbedUnimplementedReverseInteractServer()
 }
@@ -95,11 +83,8 @@ type ReverseInteractServer interface {
 type UnimplementedReverseInteractServer struct {
 }
 
-func (UnimplementedReverseInteractServer) SendCommandGetResponse(context.Context, *Command) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendCommandGetResponse not implemented")
-}
-func (UnimplementedReverseInteractServer) SendCommand(context.Context, *Command) (*Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendCommand not implemented")
+func (UnimplementedReverseInteractServer) GetCommand(context.Context, *Response) (*Command, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCommand not implemented")
 }
 func (UnimplementedReverseInteractServer) HandsOn(ReverseInteract_HandsOnServer) error {
 	return status.Errorf(codes.Unimplemented, "method HandsOn not implemented")
@@ -117,38 +102,20 @@ func RegisterReverseInteractServer(s grpc.ServiceRegistrar, srv ReverseInteractS
 	s.RegisterService(&ReverseInteract_ServiceDesc, srv)
 }
 
-func _ReverseInteract_SendCommandGetResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Command)
+func _ReverseInteract_GetCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Response)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ReverseInteractServer).SendCommandGetResponse(ctx, in)
+		return srv.(ReverseInteractServer).GetCommand(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.ReverseInteract/SendCommandGetResponse",
+		FullMethod: "/pb.ReverseInteract/GetCommand",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReverseInteractServer).SendCommandGetResponse(ctx, req.(*Command))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ReverseInteract_SendCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Command)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReverseInteractServer).SendCommand(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.ReverseInteract/SendCommand",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReverseInteractServer).SendCommand(ctx, req.(*Command))
+		return srv.(ReverseInteractServer).GetCommand(ctx, req.(*Response))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -158,8 +125,8 @@ func _ReverseInteract_HandsOn_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type ReverseInteract_HandsOnServer interface {
-	Send(*Response) error
-	Recv() (*Command, error)
+	Send(*Command) error
+	Recv() (*Response, error)
 	grpc.ServerStream
 }
 
@@ -167,12 +134,12 @@ type reverseInteractHandsOnServer struct {
 	grpc.ServerStream
 }
 
-func (x *reverseInteractHandsOnServer) Send(m *Response) error {
+func (x *reverseInteractHandsOnServer) Send(m *Command) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *reverseInteractHandsOnServer) Recv() (*Command, error) {
-	m := new(Command)
+func (x *reverseInteractHandsOnServer) Recv() (*Response, error) {
+	m := new(Response)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -187,12 +154,8 @@ var ReverseInteract_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ReverseInteractServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendCommandGetResponse",
-			Handler:    _ReverseInteract_SendCommandGetResponse_Handler,
-		},
-		{
-			MethodName: "SendCommand",
-			Handler:    _ReverseInteract_SendCommand_Handler,
+			MethodName: "GetCommand",
+			Handler:    _ReverseInteract_GetCommand_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

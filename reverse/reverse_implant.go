@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewInteractClient(conn)
+	c := pb.NewReverseInteractClient(conn)
 
 	stream, err := c.HandsOn(context.Background())
 	if err != nil {
