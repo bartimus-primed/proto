@@ -18,7 +18,8 @@ message Command {
 }
 
 message Response {
-    string resp = 1;
-    bool success = 2;
-    bool ready = 3;
+    string ranCommand = 1;
+    string resp = 2;
+    bool success = 3;
+    bool ready = 4;
 }
